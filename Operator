@@ -1,0 +1,48 @@
+#!/bin/zsh
+set -e
+
+LABEL="com.lifeos.bot"
+PLIST="/Users/wolfgang_rush/Library/LaunchAgents/${LABEL}.plist"
+DASHBOARD_URL="http://127.0.0.1:3000"
+SERVICE="gui/$(id -u)/${LABEL}"
+DOMAIN="gui/$(id -u)"
+
+case "${1:l}" in
+  on|start|"")
+    if launchctl print "$SERVICE" >/dev/null 2>&1; then
+      echo "Operator is already on."
+    else
+      launchctl bootstrap "$DOMAIN" "$PLIST"
+      echo "Operator is on."
+    fi
+    echo "Dashboard: ${DASHBOARD_URL}"
+    ;;
+  restart)
+    if launchctl print "$SERVICE" >/dev/null 2>&1; then
+      launchctl kickstart -k "$SERVICE" || launchctl bootstrap "$DOMAIN" "$PLIST"
+    else
+      launchctl bootstrap "$DOMAIN" "$PLIST"
+    fi
+    echo "Operator restarted."
+    echo "Dashboard: ${DASHBOARD_URL}"
+    ;;
+  off|stop)
+    launchctl bootout "$SERVICE" >/dev/null 2>&1 || true
+    echo "Operator is off."
+    ;;
+  status)
+    if launchctl print "$SERVICE" >/dev/null 2>&1; then
+      echo "Operator is running."
+      echo "Dashboard: ${DASHBOARD_URL}"
+    else
+      echo "Operator is not running. Start it with: operator on"
+    fi
+    ;;
+  *)
+    echo "Use: operator on"
+    echo "     operator restart"
+    echo "     operator off"
+    echo "     operator status"
+    exit 2
+    ;;
+esac
