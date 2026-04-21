@@ -44,8 +44,8 @@ Optional: a **Google Gemini API key** for internet-powered insights and analysis
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/Wolfgangrush/los.git
-cd los
+git clone https://github.com/Wolfgangrush/lifeos.git
+cd lifeos
 ```
 
 ### 2. Install Ollama and pull a model
