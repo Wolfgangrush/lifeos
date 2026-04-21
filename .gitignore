@@ -70,3 +70,11 @@ package-lock.json
 
 # Conversations
 Conversations/
+
+# Old bot iterations
+pure_telegram_bot_v*.py
+pure_telegram_bot_v*.old.py
+
+# Database files (may contain personal data)
+*.db
+life_os.db

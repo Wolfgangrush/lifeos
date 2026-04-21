@@ -42,16 +42,19 @@ function App() {
     createTask,
     deleteTask,
     deleteFood,
+    createFood,
+    updateFood,
     markBoardOver,
   } = useData(selectedDate);
-  const { isConnected, lastMessage } = useWebSocket('ws://127.0.0.1:8000/ws');
+  const { isConnected, lastMessage, error: wsError } = useWebSocket('ws://127.0.0.1:8000/ws');
   const isToday = selectedDate === todayString();
 
   useEffect(() => {
     if (lastMessage) {
       refreshAll();
     }
-  }, [lastMessage, refreshAll]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastMessage]);
 
   return (
     <div className="app-shell">
@@ -62,6 +65,11 @@ function App() {
             <h1>Life OS</h1>
             <p>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
           </div>
+        </div>
+
+        <div className="ws-status" title={isConnected ? 'WebSocket connected' : wsError || 'WebSocket disconnected'}>
+          <span className={`ws-indicator ${isConnected ? 'connected' : 'disconnected'}`}></span>
+          <span className="ws-text">{isConnected ? 'Live' : 'Offline'}</span>
         </div>
 
         <div className="calendar-control" aria-label="Calendar">
@@ -142,7 +150,13 @@ function App() {
           </div>
 
           <div className="span-all">
-            <FoodTimeline food={food} selectedDate={selectedDate} onDeleteFood={deleteFood} />
+            <FoodTimeline
+              food={food}
+              selectedDate={selectedDate}
+              onDeleteFood={deleteFood}
+              onCreateFood={createFood}
+              onUpdateFood={updateFood}
+            />
           </div>
 
           <div className="span-all">
