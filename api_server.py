@@ -303,6 +303,66 @@ async def delete_food_log(food_id: int):
 
     return {"deleted": True, "food": food.to_dict()}
 
+class FoodLogCreateRequest(BaseModel):
+    items: List[str]
+    timestamp: Optional[str] = None  # ISO format timestamp
+    macros: Optional[dict] = None
+    energy_prediction: Optional[dict] = None
+
+@app.post("/api/food")
+async def create_food_log(request: FoodLogCreateRequest):
+    """Create a new food log with optional custom timestamp"""
+    from datetime import datetime as dt
+
+    timestamp = dt.fromisoformat(request.timestamp) if request.timestamp else dt.now()
+
+    food = db.add_food_log(
+        items=request.items,
+        timestamp=timestamp,
+        macros=request.macros,
+        energy_prediction=request.energy_prediction
+    )
+
+    await manager.broadcast({
+        "type": "food_added",
+        "data": food.to_dict()
+    })
+
+    return food.to_dict()
+
+class FoodLogUpdateRequest(BaseModel):
+    items: Optional[List[str]] = None
+    timestamp: Optional[str] = None  # ISO format timestamp
+    macros: Optional[dict] = None
+    energy_prediction: Optional[dict] = None
+
+@app.put("/api/food/{food_id}")
+async def update_food_log(food_id: int, request: FoodLogUpdateRequest):
+    """Update an existing food log (e.g., to change time)"""
+    from datetime import datetime as dt
+
+    # Build update dict with only provided fields
+    update_data = {}
+    if request.items is not None:
+        update_data['items'] = request.items
+    if request.timestamp is not None:
+        update_data['timestamp'] = dt.fromisoformat(request.timestamp)
+    if request.macros is not None:
+        update_data['macros'] = request.macros
+    if request.energy_prediction is not None:
+        update_data['energy_prediction'] = request.energy_prediction
+
+    food = db.update_food_log(food_id, **update_data)
+    if not food:
+        return JSONResponse(status_code=404, content={"error": "Food log not found"})
+
+    await manager.broadcast({
+        "type": "food_updated",
+        "data": food.to_dict()
+    })
+
+    return food.to_dict()
+
 # Energy endpoints
 
 @app.get("/api/energy")

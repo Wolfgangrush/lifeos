@@ -47,7 +47,15 @@ class Task(Base):
     created_at = Column(DateTime, default=datetime.now)
     completed_at = Column(DateTime, nullable=True)
     deadline = Column(DateTime, nullable=True)
-    
+    # Gemini's pre-completion estimate of effort (minutes).
+    estimated_minutes = Column(Integer, nullable=True)
+    # Actual effort the user spent on the task (minutes). Only set when the
+    # user provides it explicitly on completion ("done in 20 min"), so the
+    # efficiency metric stays honest — never auto-derived from wall clock.
+    actual_minutes = Column(Integer, nullable=True)
+    # Absolute path to an uploaded photo/doc/PDF that proves completion.
+    evidence_path = Column(String, nullable=True)
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -59,6 +67,9 @@ class Task(Base):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
             'deadline': self.deadline.isoformat() if self.deadline else None,
+            'estimated_minutes': self.estimated_minutes,
+            'actual_minutes': self.actual_minutes,
+            'evidence_path': self.evidence_path,
         }
 
 class FoodLog(Base):
@@ -322,6 +333,12 @@ class Database:
             task_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(tasks)")).fetchall()}
             if "category" not in task_columns:
                 conn.execute(text("ALTER TABLE tasks ADD COLUMN category VARCHAR DEFAULT 'misc'"))
+            if "estimated_minutes" not in task_columns:
+                conn.execute(text("ALTER TABLE tasks ADD COLUMN estimated_minutes INTEGER"))
+            if "actual_minutes" not in task_columns:
+                conn.execute(text("ALTER TABLE tasks ADD COLUMN actual_minutes INTEGER"))
+            if "evidence_path" not in task_columns:
+                conn.execute(text("ALTER TABLE tasks ADD COLUMN evidence_path VARCHAR"))
     
     def get_session(self) -> Session:
         return self.SessionLocal()
@@ -414,10 +431,49 @@ class Database:
                 Task.description.like(f"%{description}%"),
                 Task.status == TaskStatus.PENDING
             ).first()
-            
+
             if task:
                 task.status = TaskStatus.COMPLETED
                 task.completed_at = datetime.fromisoformat(completed_at) if completed_at else datetime.now()
+                session.commit()
+                session.refresh(task)
+            return task
+        finally:
+            session.close()
+
+    def set_task_estimate(self, task_id: int, estimated_minutes: int) -> Optional[Task]:
+        """Store Gemini's effort estimate on a task."""
+        session = self.get_session()
+        try:
+            task = session.query(Task).filter(Task.id == task_id).first()
+            if task:
+                task.estimated_minutes = int(estimated_minutes) if estimated_minutes else None
+                session.commit()
+                session.refresh(task)
+            return task
+        finally:
+            session.close()
+
+    def set_task_actual_minutes(self, task_id: int, actual_minutes: int) -> Optional[Task]:
+        """Store the user-reported actual effort in minutes."""
+        session = self.get_session()
+        try:
+            task = session.query(Task).filter(Task.id == task_id).first()
+            if task:
+                task.actual_minutes = int(actual_minutes) if actual_minutes else None
+                session.commit()
+                session.refresh(task)
+            return task
+        finally:
+            session.close()
+
+    def set_task_evidence(self, task_id: int, evidence_path: str) -> Optional[Task]:
+        """Attach an evidence file path (photo/doc/PDF) to the task."""
+        session = self.get_session()
+        try:
+            task = session.query(Task).filter(Task.id == task_id).first()
+            if task:
+                task.evidence_path = evidence_path or None
                 session.commit()
                 session.refresh(task)
             return task
@@ -508,7 +564,48 @@ class Database:
             return query.all()
         finally:
             session.close()
-    
+
+    def add_food_log(
+        self,
+        items: List[str],
+        timestamp: datetime = None,
+        macros: dict = None,
+        energy_prediction: dict = None
+    ) -> FoodLog:
+        """Add a new food log"""
+        session = self.get_session()
+        try:
+            food_log = FoodLog(
+                items=items,
+                timestamp=timestamp or datetime.now(),
+                macros=macros,
+                energy_prediction=energy_prediction
+            )
+            session.add(food_log)
+            session.commit()
+            session.refresh(food_log)
+            return food_log
+        finally:
+            session.close()
+
+    def update_food_log(self, food_id: int, **kwargs) -> Optional[FoodLog]:
+        """Update an existing food log"""
+        session = self.get_session()
+        try:
+            food_log = session.query(FoodLog).filter(FoodLog.id == food_id).first()
+            if not food_log:
+                return None
+
+            for key, value in kwargs.items():
+                if hasattr(food_log, key):
+                    setattr(food_log, key, value)
+
+            session.commit()
+            session.refresh(food_log)
+            return food_log
+        finally:
+            session.close()
+
     # Energy operations
     
     def log_energy(

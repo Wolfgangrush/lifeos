@@ -288,7 +288,7 @@ class InsightsEngine:
                 patterns.append({
                     'type': 'low_energy_pattern',
                     'hours': sorted(set(low_hours)),
-                    'message': f'You tend to have low energy around {", ".join(f"{h}:00" for h in sorted(set(low_hours))}.',
+                    'message': f'You tend to have low energy around {", ".join(f"{h}:00" for h in sorted(set(low_hours)))}.',
                     'suggestion': 'Avoid high-focus tasks during these times.'
                 })
 

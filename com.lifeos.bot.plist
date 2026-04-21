@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
+<!--
+  This is a TEMPLATE. Run ./configure.sh to generate a personalized copy
+  installed at ~/Library/LaunchAgents/com.lifeos.bot.plist
+-->
 <dict>
   <key>Label</key>
   <string>com.lifeos.bot</string>
@@ -8,11 +12,11 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/zsh</string>
-    <string>/Users/wolfgang_rush/.lifeos/run_lifeos_bot.sh</string>
+    <string>__LIFEOS_DIR__/run_lifeos_bot.sh</string>
   </array>
 
   <key>WorkingDirectory</key>
-  <string>/Users/wolfgang_rush/Desktop/Desktop - Wolfgang_rush’s Mac mini/los</string>
+  <string>__LIFEOS_DIR__</string>
 
   <key>RunAtLoad</key>
   <true/>
@@ -21,10 +25,10 @@
   <true/>
 
   <key>StandardOutPath</key>
-  <string>/Users/wolfgang_rush/.lifeos/launchd.out.log</string>
+  <string>__HOME__/.lifeos/launchd.out.log</string>
 
   <key>StandardErrorPath</key>
-  <string>/Users/wolfgang_rush/.lifeos/launchd.err.log</string>
+  <string>__HOME__/.lifeos/launchd.err.log</string>
 
   <key>EnvironmentVariables</key>
   <dict>

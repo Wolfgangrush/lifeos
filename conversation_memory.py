@@ -10,12 +10,18 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from collections import defaultdict
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, Float, JSON, ForeignKey, Index
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy import create_engine, desc, func
+from sqlalchemy import desc, func
 
-from database import Base, Database
+from database import (
+    Base,
+    Database,
+    ConversationMessage,
+    ConversationEntity,
+    ConversationMood,
+    UserPreference,
+    ScheduledInsight,
+    ProactiveReminder,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +76,7 @@ class ConversationMemory:
                 user_id=user_id,
                 role=role,
                 content=content,
-                metadata=metadata or {}
+                meta_data=metadata or {}
             )
             session.add(msg)
 
@@ -98,7 +104,7 @@ class ConversationMemory:
                     'role': msg.role,
                     'content': msg.content,
                     'timestamp': msg.timestamp.isoformat() if msg.timestamp else None,
-                    'metadata': msg.metadata or {}
+                    'metadata': msg.meta_data or {}
                 }
                 for msg in reversed(messages)
             ]
@@ -300,101 +306,4 @@ class ConversationMemory:
             session.close()
 
 
-# New ORM models for conversation memory
-
-class ConversationMessage(Base):
-    __tablename__ = 'conversation_messages'
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    role = Column(String, nullable=False)  # 'user', 'assistant', 'system'
-    content = Column(Text, nullable=False)
-    metadata = Column(JSON)  # Additional data like intent, confidence
-    timestamp = Column(DateTime, default=datetime.now, index=True)
-
-    __table_args__ = (
-        Index('idx_conv_user_time', 'user_id', 'timestamp'),
-    )
-
-
-class ConversationEntity(Base):
-    __tablename__ = 'conversation_entities'
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    entity_type = Column(String, nullable=False)  # 'person', 'project', 'location', 'organization'
-    name = Column(String, nullable=False)
-    attributes = Column(JSON)  # Additional data like role, department, etc.
-    source_message = Column(Text)  # Where this was first mentioned
-    mention_count = Column(Integer, default=1)
-    created_at = Column(DateTime, default=datetime.now)
-    last_seen = Column(DateTime, default=datetime.now, index=True)
-
-    __table_args__ = (
-        Index('idx_entity_user_type', 'user_id', 'entity_type'),
-    )
-
-
-class ConversationMood(Base):
-    __tablename__ = 'conversation_mood'
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    sentiment = Column(Float, nullable=False)  # -1.0 (negative) to 1.0 (positive)
-    emotion = Column(String)  # 'happy', 'sad', 'tired', 'stressed', etc.
-    context = Column(String)  # What caused this mood
-    message = Column(Text)  # Original message
-    timestamp = Column(DateTime, default=datetime.now, index=True)
-
-    __table_args__ = (
-        Index('idx_mood_user_time', 'user_id', 'timestamp'),
-    )
-
-
-class UserPreference(Base):
-    __tablename__ = 'user_preferences'
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    key = Column(String, nullable=False)  # 'response_style', 'reminder_time', etc.
-    value = Column(JSON)  # Can be string, number, boolean, or dict
-    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
-
-    __table_args__ = (
-        Index('idx_pref_user_key', 'user_id', 'key'),
-    )
-
-
-class ScheduledInsight(Base):
-    __tablename__ = 'scheduled_insights'
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    insight_type = Column(String, nullable=False)  # 'daily', 'weekly', 'pattern', 'proactive'
-    title = Column(String)
-    content = Column(Text, nullable=False)
-    data_summary = Column(JSON)  # The data that generated this insight
-    scheduled_for = Column(DateTime, nullable=False, index=True)
-    sent = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.now)
-
-    __table_args__ = (
-        Index('idx_insight_scheduled', 'scheduled_for'),
-    )
-
-
-class ProactiveReminder(Base):
-    __tablename__ = 'proactive_reminders'
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    trigger_type = Column(String, nullable=False)  # 'energy_dip', 'task_overdue', 'pattern_match'
-    message = Column(Text, nullable=False)
-    trigger_data = Column(JSON)  # Data that triggered this reminder
-    scheduled_for = Column(DateTime, nullable=False, index=True)
-    sent = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.now)
-
-    __table_args__ = (
-        Index('idx_proactive_scheduled', 'scheduled_for'),
-    )
+# ORM models are imported from database.py to avoid duplicate mappings.

@@ -1515,8 +1515,41 @@ Current time: {datetime.now().strftime('%Y-%m-%d %H:%M')}
             hour = 0
         return base.replace(hour=hour, minute=minute, second=0, microsecond=0).isoformat()
 
+
+    def _is_court_board_message(self, text: str) -> bool:
+        """Detect if text looks like a High Court Board paste"""
+        court_patterns = [
+            r'Court No\.',
+            r'AA\s*:\s*\d+',
+            r'A\s*:\s*\d+',
+            r'F\s*:\s*\d+',
+            r'R\s*:\s*\d+',
+            r'\[Civil\]',
+            r'\[Criminal\]',
+            r'WP/\d+/\d+',
+            r'APL/\d+/\d+',
+        ]
+        matches = sum(1 for p in court_patterns if re.search(p, text, re.IGNORECASE))
+        return matches >= 3
+
     def _parse_multi_intent_message(self, text: str) -> list[dict]:
         entries = []
+        
+        # Auto-detect and handle court board messages first
+        if self._is_court_board_message(text):
+            try:
+                board_date, board_entries = self._parse_court_board_entries(text)
+                if board_entries:
+                    saved = self.db.replace_court_board(board_date, board_entries)
+                    return [{
+                        "type": "court_board",
+                        "board_date": board_date,
+                        "entries_count": len(board_entries),
+                        "saved": saved,
+                        "response": f"✅ Saved {len(board_entries)} court board entries for {board_date}"
+                    }]
+            except Exception as e:
+                logger.warning(f"Court board auto-detection failed: {e}")
         
         # First check for complex multi-food patterns (parentheses, multiple time hints)
         if ("(" in text and ")" in text) or ("+" in text and ("am" in text.lower() or "pm" in text.lower())):
@@ -4451,6 +4484,10 @@ Current time: {datetime.now().strftime('%Y-%m-%d %H:%M')}
             self.db.log_energy(level=level, context=context_note, predicted=False)
             
             return f"Energy logged: {level}/10"
+        
+        elif data_type == 'court_board':
+            # Court board was already saved in _parse_multi_intent_message
+            return data.get('response', f"✅ Court board saved for {data.get('board_date')}")
         
         else:
             return "I understood your message but couldn't categorize it. Could you be more specific?"

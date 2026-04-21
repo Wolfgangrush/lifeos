@@ -2,8 +2,10 @@
 set -e
 
 LABEL="com.lifeos.bot"
-PLIST="/Users/wolfgang_rush/Library/LaunchAgents/${LABEL}.plist"
-DASHBOARD_URL="http://127.0.0.1:3000"
+PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+LOG="${PROJECT_DIR}/logs/telegram_bot.log"
+ERR_LOG="$HOME/.lifeos/launchd.err.log"
 SERVICE="gui/$(id -u)/${LABEL}"
 DOMAIN="gui/$(id -u)"
 
@@ -13,9 +15,8 @@ case "${1:l}" in
       echo "Operator is already on."
     else
       launchctl bootstrap "$DOMAIN" "$PLIST"
-      echo "Operator is on."
+      echo "Operator is on. Telegram is live 24x7."
     fi
-    echo "Dashboard: ${DASHBOARD_URL}"
     ;;
   restart)
     if launchctl print "$SERVICE" >/dev/null 2>&1; then
@@ -24,7 +25,6 @@ case "${1:l}" in
       launchctl bootstrap "$DOMAIN" "$PLIST"
     fi
     echo "Operator restarted."
-    echo "Dashboard: ${DASHBOARD_URL}"
     ;;
   off|stop)
     launchctl bootout "$SERVICE" >/dev/null 2>&1 || true
@@ -32,17 +32,32 @@ case "${1:l}" in
     ;;
   status)
     if launchctl print "$SERVICE" >/dev/null 2>&1; then
-      echo "Operator is running."
-      echo "Dashboard: ${DASHBOARD_URL}"
+      PID=$(launchctl print "$SERVICE" 2>/dev/null | awk '/pid = /{print $3; exit}')
+      if [[ -n "$PID" && "$PID" != "0" ]]; then
+        echo "Operator is running (pid $PID)."
+      else
+        echo "Operator is loaded but not currently running (KeepAlive will respawn)."
+      fi
     else
       echo "Operator is not running. Start it with: operator on"
     fi
     ;;
+  logs)
+    echo "--- bot log (tail) ---"
+    tail -n 40 "$LOG" 2>/dev/null || echo "(no bot log yet)"
+    echo "--- launchd err (tail) ---"
+    tail -n 20 "$ERR_LOG" 2>/dev/null || echo "(no err log)"
+    ;;
+  tail)
+    tail -f "$LOG"
+    ;;
   *)
     echo "Use: operator on"
-    echo "     operator restart"
     echo "     operator off"
+    echo "     operator restart"
     echo "     operator status"
+    echo "     operator logs"
+    echo "     operator tail"
     exit 2
     ;;
 esac

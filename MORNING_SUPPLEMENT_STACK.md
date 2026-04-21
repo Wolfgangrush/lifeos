@@ -1,16 +1,6 @@
-# Morning Supplement Stack
+# Morning Supplement Stack (Example)
 
-This stack was added from:
-
-- `/Users/wolfgang_rush/Downloads/IMG_2874.HEIC`
-- `/Users/wolfgang_rush/Downloads/IMG_2875.HEIC`
-- `/Users/wolfgang_rush/Downloads/IMG_2876.HEIC`
-- `/Users/wolfgang_rush/Downloads/IMG_2877.HEIC`
-- `/Users/wolfgang_rush/Downloads/IMG_2878.HEIC`
-- `/Users/wolfgang_rush/Downloads/IMG_2879.HEIC`
-- `/Users/wolfgang_rush/Downloads/IMG_2880.HEIC`
-
-The seven photos appear to show five separate supplements. The Wellbeing Nutrition product appears in three photos: front label and two supplement-facts panels.
+An example supplement stack to show how LifeOS tracks supplements. Customize this with your own stack.
 
 ## Added Supplements
 

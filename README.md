@@ -1,646 +1,478 @@
-# Life OS - Your AI-Powered Life Operating System
+# Life OS
 
-A complete, locally-hosted AI command center that uses Telegram as an ultra-low-friction input method to track your tasks, reminders, health, supplements, food intake, and energy levels.
-
-![Life OS Architecture](https://via.placeholder.com/800x400?text=Life+OS+Dashboard)
-
-## ✨ Features
-
-- 🤖 **Natural Language Input** - Just text your Telegram bot like talking to a friend
-- 🧠 **Local LLM Processing** - Runs entirely on your machine using Ollama
-- 📊 **Beautiful Dashboard** - Real-time React UI inspired by Things 3
-- ⚡ **Energy Predictions** - AI predicts energy crashes from food intake
-- 🎯 **Smart Reminders** - Contextual task suggestions based on your energy patterns
-- 📈 **Automatic Summaries** - Daily and weekly AI-generated summaries
-- 🔒 **100% Private** - All data stays on your machine
-- 🚀 **Real-time Updates** - WebSocket-powered instant synchronization
-
-## 🏗️ Architecture
+A locally-hosted, AI-powered personal command center. Talk to a Telegram bot in natural language to track tasks, food, supplements, energy, expenses, reminders, and more. Everything is stored on your machine in SQLite and displayed in a real-time React dashboard.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Telegram Bot                             │
-│              (Ultra-Low Friction Input)                      │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Python Ingestion Pipeline                       │
-│         (Webhook/Long Polling Handler)                       │
-└────────────┬──────────────────────┬─────────────────────────┘
-             │                      │
-             ▼                      ▼
-    ┌──────────────┐      ┌──────────────────┐
-    │ Slash        │      │ Natural Language │
-    │ Commands     │      │ → Local LLM      │
-    │ (/eatery)    │      │ (Ollama)         │
-    └──────┬───────┘      └────────┬─────────┘
-           │                       │
-           │                       ▼
-           │              ┌──────────────────┐
-           │              │ JSON Extraction  │
-           │              │ & Classification │
-           │              └────────┬─────────┘
-           │                       │
-           └───────────┬───────────┘
-                       │
-                       ▼
-            ┌────────────────────┐
-            │  SQLite Database   │
-            │  (Local Vault)     │
-            └──────────┬─────────┘
-                       │
-                       ▼
-            ┌────────────────────┐
-            │  FastAPI Backend   │
-            │  (REST + WebSocket)│
-            └──────────┬─────────┘
-                       │
-                       ▼
-            ┌────────────────────┐
-            │  React Dashboard   │
-            │  (Real-time UI)    │
-            └────────────────────┘
+You  ──►  Telegram  ──►  Ollama (local LLM)  ──►  SQLite  ──►  React Dashboard
+                              + Gemini (optional, for insights)
 ```
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Python 3.9+**
-- **Node.js 18+**
-- **Ollama** ([Download](https://ollama.ai/download))
-- **Telegram Account** (to create a bot)
-
-### 1. Install Ollama and Download a Model
-
-```bash
-# Install Ollama
-# Visit https://ollama.ai/download for your OS
-
-# Download recommended model
-ollama pull llama3.1:8b
-
-# Verify it's running
-ollama list
-```
-
-### 2. Create Telegram Bot
-
-1. Open Telegram and message [@BotFather](https://t.me/botfather)
-2. Send `/newbot`
-3. Follow prompts to name your bot
-4. **Save the token** (looks like `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
-5. Message your new bot and send `/start`
-6. Get your chat ID: Message [@userinfobot](https://t.me/userinfobot)
-7. **Save your chat ID** (a number like `987654321`)
-
-### 3. Clone and Setup
-
-```bash
-# Navigate to where you want Life OS
-cd ~/projects
-
-# Copy the life-os-skill folder to your desired location
-cp -r /path/to/life-os-skill ./life-os
-
-cd life-os
-
-# Create Python virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Copy environment template
-cp .env.example .env
-
-# Edit .env with your credentials
-nano .env  # or vim, code, etc.
-```
-
-### 4. Configure Environment
-
-Edit `.env`:
-
-```bash
-# Your Telegram bot token from BotFather
-TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
-
-# Your Telegram chat ID from @userinfobot
-TELEGRAM_CHAT_ID=987654321
-
-# Ollama configuration (default should work)
-OLLAMA_URL=http://localhost:11434
-LLM_MODEL=llama3.1:8b
-
-# Database location
-DATABASE_PATH=data/life_os.db
-
-# API server port
-API_PORT=8000
-
-# Logging level
-LOG_LEVEL=INFO
-```
-
-### 5. Initialize Database
-
-```bash
-# Create database with sample data
-python scripts/init_db.py --seed
-
-# Or start fresh without sample data
-python scripts/init_db.py
-```
-
-### 6. Install Dashboard Dependencies
-
-```bash
-cd dashboard
-npm install
-cd ..
-```
-
-### 7. Start All Services
-
-**Option A: Start All Together**
-```bash
-# Ensure Ollama is running first
-ollama serve  # In a separate terminal if not running
-
-# Start all Life OS services
-python scripts/start_all.py
-```
-
-**Option B: Start Separately** (for debugging)
-```bash
-# Terminal 1: API Server
-python scripts/api_server.py
-
-# Terminal 2: Telegram Bot
-python scripts/bot.py
-
-# Terminal 3: Automation Engine
-python scripts/automation.py
-
-# Terminal 4: Dashboard
-cd dashboard && npm run dev
-```
-
-### 8. Access the Dashboard
-
-Open your browser to: **http://localhost:3000**
-
-## 📱 Using Life OS
-
-### Telegram Commands
-
-#### Slash Commands (Quick Actions)
-
-- `/start` - Welcome message and help
-- `/eatery` - Interactive food logging menu
-- `/task` - Quick task creation/completion
-- `/energy` - Log current energy level (1-10)
-- `/summary` - Get today's summary
-- `/stats` - View weekly statistics
-- `/help` - Show help message
-
-#### Natural Language Examples
-
-Just text your bot naturally:
-
-**Tasks:**
-```
-✅ "Finished drafting the affidavit"
-📝 "Need to file petition by Friday"
-🎯 "Draft quarterly report - high priority"
-```
-
-**Food:**
-```
-🍽️ "Ate dal and rice at 3 PM"
-☕ "Had coffee and toast for breakfast"
-🥗 "Chicken salad for lunch"
-💧 "Drank water"
-```
-
-**Energy:**
-```
-⚡ "Feeling energized"
-😴 "Tired after lunch"
-🚀 "Peak focus right now"
-```
-
-**Health:**
-```
-💊 "Took vitamin D and magnesium"
-😴 "Slept 7.5 hours last night"
-🏃 "Went for a 30-minute run"
-```
-
-The bot will:
-1. Parse your message using local LLM
-2. Extract structured data
-3. Store in SQLite database
-4. Update dashboard in real-time
-5. Send confirmation message
-
-### Dashboard Features
-
-**Main Dashboard View:**
-- Daily summary card with key metrics
-- Task board (Things 3 style)
-- Energy level chart with predictions
-- Food timeline with macro breakdown
-
-**Tasks View:**
-- Kanban-style board
-- Pending vs Completed columns
-- Priority indicators
-- Focus-required tags
-- Deadline alerts
-
-**Energy View:**
-- Current energy level
-- Today's timeline
-- Hourly breakdown
-- Predicted crashes
-
-**Food View:**
-- Meal timeline
-- Macro composition (carbs, protein, fat)
-- Energy impact predictions
-- Common foods tracker
-
-**Stats View:**
-- Weekly overview
-- Productivity metrics
-- Energy patterns (peak/low times)
-- Nutrition insights
-- Current streak counter
-
-## 🤖 Automation Features
-
-Life OS automatically:
-
-### Nightly Summary (11:59 PM)
-```
-🌙 Daily Summary - January 15, 2024
-
-You crushed it today! Completed 5 tasks including that 
-important quarterly report. Your energy peaked around 
-9 AM—that's when you're usually at your best. Consider 
-scheduling tomorrow's focus work for that time window.
-
-Stats:
-• Tasks: 5 completed, 3 pending
-• Meals: 3 logged
-• Energy: 7.2/10
-
-Rest well! 😴
-```
-
-### Morning Briefing (8:00 AM)
-```
-☀️ Good Morning!
-
-Yesterday:
-• 5 tasks completed
-• Energy avg: 7.2/10
-
-Today's Top Tasks:
-1. 🔴 File petition
-2. 🟡 Review proposals
-3. 🟢 Call dentist
-
-💡 Tip: You're usually most energized at 09:00
-
-Have a productive day! 🚀
-```
-
-### Energy Crash Warnings
-```
-⚠️ Energy Alert
-
-Heavy carbs detected. Energy dip expected in 45 mins.
-
-Consider:
-• Taking a short walk
-• Having a healthy snack
-• Taking a brief break
-
-Stay energized! ⚡
-```
-
-### Contextual Reminders
-```
-🎯 Perfect Timing!
-
-You're usually at peak energy right now. Great time 
-to tackle:
-
-Draft quarterly report
-
-Make it count! 💪
-```
-
-### Weekly Review (Sunday 9 PM)
-```
-📊 Weekly Review
-
-Productivity:
-• 20 tasks completed
-• 80.0% completion rate
-• 7 day streak 🔥
-
-Energy Patterns:
-• Average: 7.1/10
-• Peak time: 09:00
-• Low time: 15:00
-
-Nutrition:
-• 21 meals logged
-• Top food: rice
-
-Keep up the great work! 💪
-```
-
-## 🎨 Customization
-
-### Modify LLM Behavior
-
-Edit `scripts/llm_parser.py`:
-
-```python
-def _get_system_prompt(self):
-    # Add new categories
-    # Adjust energy prediction rules
-    # Change time parsing logic
-    # Modify priority detection
-```
-
-### Add New Automation
-
-Edit `scripts/automation.py`:
-
-```python
-async def custom_reminder(self):
-    """Your custom automation"""
-    # Check conditions
-    # Send Telegram message
-    # Log to database
-
-# Schedule it
-self.scheduler.add_job(
-    self.custom_reminder,
-    CronTrigger(hour=14, minute=0),  # 2 PM daily
-    id='custom_reminder'
-)
-```
-
-### Customize Dashboard Theme
-
-Edit `dashboard/tailwind.config.js`:
-
-```javascript
-theme: {
-  extend: {
-    colors: {
-      // Your custom colors
-      primary: '#your-color',
-    },
-  },
-}
-```
-
-### Add Database Tables
-
-Edit `scripts/database.py`:
-
-```python
-class CustomLog(Base):
-    __tablename__ = 'custom_logs'
-    id = Column(Integer, primary_key=True)
-    # Your fields
-```
-
-## 📊 Data Management
-
-### Backup Database
-
-```bash
-# Manual backup
-cp data/life_os.db backups/life_os_$(date +%Y%m%d).db
-
-# Automated daily backup (add to cron)
-0 0 * * * cp /path/to/life_os.db /path/to/backups/life_os_$(date +\%Y\%m\%d).db
-```
-
-### Export Data
-
-```bash
-# Export to JSON
-python -c "
-from scripts.database import Database
-import json
-
-db = Database()
-tasks = db.get_tasks(limit=1000)
-
-with open('export.json', 'w') as f:
-    json.dump([t.to_dict() for t in tasks], f, indent=2)
-"
-```
-
-### Reset Database
-
-```bash
-python scripts/init_db.py --reset --seed
-```
-
-## 🔧 Troubleshooting
-
-### Bot Not Responding
-
-```bash
-# Check if bot is running
-ps aux | grep bot.py
-
-# Check logs
-tail -f logs/bot.log
-
-# Verify Telegram token
-echo $TELEGRAM_BOT_TOKEN
-
-# Test bot manually
-curl https://api.telegram.org/bot<YOUR_TOKEN>/getMe
-```
-
-### LLM Not Parsing
-
-```bash
-# Check Ollama
-ollama list
-ollama serve  # Start if not running
-
-# Test LLM directly
-ollama run llama3.1:8b "Parse: Ate rice at 3 PM"
-
-# Check model is correct
-cat .env | grep LLM_MODEL
-```
-
-### Dashboard Not Updating
-
-```bash
-# Check WebSocket connection (browser console)
-# Should show: "WebSocket connected"
-
-# Check API server
-curl http://localhost:8000/api/health
-
-# Restart services
-pkill -f "python scripts/"
-python scripts/start_all.py
-```
-
-### Database Errors
-
-```bash
-# Check file permissions
-ls -la data/life_os.db
-
-# Fix permissions
-chmod 644 data/life_os.db
-
-# Check for corruption
-sqlite3 data/life_os.db "PRAGMA integrity_check;"
-
-# Reset if needed
-python scripts/init_db.py --reset
-```
-
-## 📚 Documentation
-
-- [SKILL.md](SKILL.md) - Complete skill documentation
-- [references/prompts.md](references/prompts.md) - LLM prompt guide
-- [references/database_schema.md](references/database_schema.md) - Database schema
-- [references/api_docs.md](references/api_docs.md) - API reference
-
-## 🛠️ Development
-
-### Project Structure
-
-```
-life-os/
-├── scripts/              # Python backend
-│   ├── bot.py           # Telegram bot
-│   ├── llm_parser.py    # LLM integration
-│   ├── database.py      # Database models
-│   ├── api_server.py    # FastAPI backend
-│   ├── automation.py    # Background tasks
-│   ├── init_db.py       # DB initialization
-│   └── start_all.py     # Service launcher
-├── dashboard/           # React frontend
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── components/
-│   │   └── hooks/
-│   └── package.json
-├── references/          # Documentation
-├── data/                # SQLite database
-├── logs/                # Log files
-├── .env                 # Configuration
-└── requirements.txt
-```
-
-### Running Tests
-
-```bash
-# Test database operations
-python -c "from scripts.database import Database; db = Database(); print(db.get_tasks())"
-
-# Test LLM parsing
-python -c "from scripts.llm_parser import LLMParser; import asyncio; p = LLMParser(); print(asyncio.run(p.parse_message('Ate rice')))"
-
-# Test API endpoints
-curl http://localhost:8000/api/tasks
-curl http://localhost:8000/api/summary/today
-```
-
-## 🚀 Deployment
-
-### Local Network Access
-
-To access from other devices on your network:
-
-1. Find your local IP:
-```bash
-ifconfig | grep "inet "  # macOS/Linux
-ipconfig  # Windows
-```
-
-2. Update dashboard API URL in `dashboard/src/hooks/useData.js`:
-```javascript
-const API_URL = 'http://192.168.1.100:8000/api';
-```
-
-3. Start with network binding:
-```bash
-uvicorn scripts.api_server:app --host 0.0.0.0 --port 8000
-```
-
-### Production Deployment (Advanced)
-
-Not recommended for beginners. Life OS is designed for local use.
-
-If you must deploy:
-- Use HTTPS (Let's Encrypt + nginx)
-- Add authentication (OAuth2, API keys)
-- Use gunicorn for API
-- Deploy dashboard as static build
-- Set up monitoring (Sentry, DataDog)
-- Regular backups
-- Rate limiting
-- CORS configuration
-
-## 🤝 Contributing
-
-This is a skill/template. Fork and customize for your needs!
-
-Ideas for contributions:
-- Voice input support
-- Image recognition for food
-- More automation recipes
-- Mobile app (React Native)
-- Integrations (Notion, Obsidian, etc.)
-- Multi-user support
-- Advanced analytics
-
-## 📄 License
-
-MIT License - Feel free to use and modify!
-
-## 🙏 Acknowledgments
-
-- Built with [FastAPI](https://fastapi.tiangolo.com/)
-- Powered by [Ollama](https://ollama.ai/)
-- UI inspired by [Things 3](https://culturedcode.com/things/)
-- React + [Tailwind CSS](https://tailwindcss.com/)
-
-## 📬 Support
-
-Questions? Issues? Ideas?
-
-1. Check documentation in `references/`
-2. Review troubleshooting section above
-3. Test individual components
-4. Check logs in `logs/` directory
+## What It Does
+
+| You say in Telegram | What happens |
+|---|---|
+| "Finished the quarterly report" | Logs a completed task |
+| "Need to file appeal by Friday" | Creates a pending task with deadline |
+| "Had paneer butter masala for lunch" | Logs food with estimated nutrition |
+| "Spent 2500 on groceries" | Logs an expense |
+| "At the office" | Starts a location timer |
+| "Leaving" | Stops the timer, shows duration |
+| "Remind me to call the bank tomorrow 10am" | Sets a reminder |
+| "How's my day going?" | Returns an AI-generated summary |
+| "Energy 7" | Logs current energy level (1-10) |
+| "Took vitamin D and magnesium" | Logs supplement intake |
+
+The dashboard updates in real time via WebSocket.
 
 ---
 
-**Built with ❤️ for personal productivity and privacy**
+## Prerequisites
 
-*Your data, your machine, your life OS.*
+| Dependency | Version | What it does |
+|---|---|---|
+| **Python** | 3.10+ | Runs the bot, API server, and automation engine |
+| **Node.js** | 18+ | Runs the React dashboard (Vite dev server) |
+| **Ollama** | latest | Hosts the local LLM for natural language parsing |
+| **Telegram account** | -- | Used to create a bot via @BotFather |
+
+Optional: a **Google Gemini API key** for internet-powered insights and analysis.
+
+---
+
+## Installation
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/Wolfgangrush/los.git
+cd los
+```
+
+### 2. Install Ollama and pull a model
+
+macOS:
+```bash
+brew install ollama
+```
+
+Linux:
+```bash
+curl -fsSL https://ollama.ai/install.sh | sh
+```
+
+Windows: download from [ollama.com/download](https://ollama.com/download).
+
+Then pull the model:
+```bash
+ollama serve          # start the Ollama server (keep this running)
+ollama pull llama3.2:latest
+```
+
+### 3. Create a Telegram bot
+
+1. Open Telegram and message [@BotFather](https://t.me/botfather).
+2. Send `/newbot` and follow the prompts.
+3. Copy the **bot token** (looks like `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`).
+4. Message your new bot `/start` to activate it.
+5. Message [@userinfobot](https://t.me/userinfobot) to get your **user/chat ID** (a number like `987654321`).
+
+### 4. Run the configure script
+
+```bash
+./configure.sh
+```
+
+This will:
+- Create a Python virtualenv and install dependencies
+- Install Node.js dependencies
+- Copy `.env.example` to `.env` (if it doesn't exist)
+- On macOS: install a LaunchAgent so LifeOS runs in the background and the `operator` command works
+
+### 5. Add your credentials to `.env`
+
+Open `.env` in any editor and fill in your values:
+
+```bash
+nano .env
+```
+
+```env
+# Required
+TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+TELEGRAM_CHAT_ID=987654321
+TELEGRAM_USER_ID=987654321
+
+# Local LLM (defaults work if Ollama is running)
+OLLAMA_URL=http://localhost:11434
+LLM_MODEL=llama3.2:latest
+
+# Optional: Gemini for internet-powered insights
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
+
+# Database
+DATABASE_PATH=data/life_os.db
+
+# API Server
+API_PORT=8000
+LOG_LEVEL=INFO
+NUTRITION_PROVIDER=local
+ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173
+```
+
+### 6. Initialize the database
+
+```bash
+python3 init_db.py --seed    # with sample data
+# or
+python3 init_db.py           # empty database
+```
+
+### 7. Start LifeOS
+
+**Option A -- All-in-one (recommended):**
+
+```bash
+python3 start_all.py
+```
+
+This starts the Telegram bot, API server, and automation engine together.
+
+**Option B -- Services separately (for debugging):**
+
+```bash
+# Terminal 1: API server
+python3 api_server.py
+
+# Terminal 2: Telegram bot
+python3 bot.py
+
+# Terminal 3: Automation engine
+python3 automation.py
+
+# Terminal 4: Dashboard
+npm run dev
+```
+
+**Option C -- macOS background service:**
+
+If you ran `./configure.sh` on macOS, you can use the `operator` command:
+
+```bash
+operator on        # start as background service
+operator status    # check if running
+operator restart   # restart all services
+operator off       # stop
+operator logs      # view recent logs
+operator tail      # follow the log live
+```
+
+### 8. Open the dashboard
+
+```
+http://127.0.0.1:3000
+```
+
+Start the Vite dev server if it isn't already running:
+
+```bash
+npm run dev
+```
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│                 Telegram Chat                     │
+│           (your natural-language input)           │
+└────────────────────┬────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────┐
+│            Python Ingestion Pipeline             │
+│         bot.py  /  pure_telegram_bot_v4.py       │
+└────────┬───────────────────────┬────────────────┘
+         │                       │
+         ▼                       ▼
+┌────────────────┐      ┌────────────────┐
+│  Ollama        │      │  Gemini        │
+│  (local LLM)   │      │  (cloud, opt.) │
+│  classification │      │  insights      │
+└───────┬────────┘      └───────┬────────┘
+        │                       │
+        └───────────┬───────────┘
+                    ▼
+         ┌────────────────────┐
+         │   SQLite Database  │
+         │   data/life_os.db  │
+         └─────────┬──────────┘
+                   │
+                   ▼
+         ┌────────────────────┐
+         │  FastAPI + WS      │
+         │  api_server.py     │
+         │  :8000             │
+         └─────────┬──────────┘
+                   │
+                   ▼
+         ┌────────────────────┐
+         │  React Dashboard   │
+         │  Vite + Tailwind   │
+         │  :3000             │
+         └────────────────────┘
+```
+
+### Key files
+
+| File | Purpose |
+|---|---|
+| `bot.py` | Main Telegram bot with all command handlers |
+| `api_server.py` | FastAPI backend serving REST + WebSocket |
+| `database.py` | SQLAlchemy models and all DB operations |
+| `llm_parser.py` | Sends messages to Ollama, extracts structured JSON |
+| `automation.py` | Scheduled jobs: summaries, reminders, energy alerts |
+| `insights_engine.py` | Proactive pattern analysis engine |
+| `conversation_memory.py` | Conversation history, entity extraction, mood tracking |
+| `nutrition_estimator.py` | Estimates macros from food descriptions |
+| `gemini_web_agent.py` | Gemini-powered web browsing for research |
+| `start_all.py` | Launches all services together |
+| `App.jsx` | Main React dashboard component |
+| `useData.js` | React hook for API data fetching |
+| `useWebSocket.js` | React hook for real-time WebSocket updates |
+| `configure.sh` | One-command setup script |
+| `Operator` | macOS service manager (start/stop/restart) |
+
+---
+
+## Telegram Commands
+
+| Command | What it does |
+|---|---|
+| `/start` | Welcome message |
+| `/help` | Show all commands |
+| `/task` | Create or manage tasks |
+| `/newtask` | Quick task creation |
+| `/delete_task` | Remove a task |
+| `/eatery` | Interactive food logging |
+| `/food` | Log food |
+| `/foodtoday` | View today's food with delete option |
+| `/delete_food` | Remove a food entry |
+| `/energy` | Log energy level (1-10) |
+| `/supplements` | Log supplement intake |
+| `/addsupplement` | Add a supplement to your stack |
+| `/removesupplement` | Remove a supplement |
+| `/remind` | Set a reminder |
+| `/reminders` | View pending reminders |
+| `/summary` | Today's AI summary |
+| `/stats` | Weekly statistics |
+| `/analyze` | Deep AI analysis of your data |
+| `/mood` | View mood/sentiment trends |
+| `/style` | Change bot response style (brief/friendly/analytical) |
+| `/rollover` | Move yesterday's pending tasks to today |
+| `/operator` | Check service status |
+
+You can also just type naturally -- the LLM figures out what you mean.
+
+---
+
+## Dashboard
+
+The React dashboard at `http://127.0.0.1:3000` shows:
+
+- **Daily summary** with key metrics
+- **Task board** (Things 3-style, pending vs completed)
+- **Energy chart** with hourly timeline
+- **Food timeline** with macro breakdown and edit/delete
+- **Court board** panel for case/project tracking
+- **Coach analysis** with AI-generated insights
+- **History strip** to browse previous days
+
+All panels update in real time via WebSocket.
+
+---
+
+## Automation
+
+The automation engine runs in the background and sends you Telegram messages:
+
+| Automation | When | What |
+|---|---|---|
+| Morning briefing | 8:00 AM | Yesterday's recap + today's priorities |
+| Energy crash warning | After heavy meals | "Energy dip expected in 45 min" |
+| Peak energy nudge | During your peak hours | Suggests tackling hard tasks |
+| Nightly summary | 11:59 PM | Full day recap with stats |
+| Weekly review | Sunday 9 PM | Week-level patterns and streaks |
+| Smart reminders | Context-dependent | Proactive suggestions from patterns |
+
+---
+
+## Customization
+
+### Change the LLM model
+
+Edit `.env`:
+```env
+LLM_MODEL=llama3.1:70b    # larger model, slower but smarter
+LLM_MODEL=mistral:7b      # alternative model
+LLM_MODEL=phi3:mini        # smaller, faster
+```
+
+Make sure you've pulled the model first: `ollama pull <model-name>`
+
+### Add supplements to your stack
+
+Use `/addsupplement` in Telegram, or edit the `DEFAULT_SUPPLEMENTS` list in `bot.py`.
+
+### Customize the dashboard theme
+
+Edit `tailwind.config.js` and `index.css`.
+
+### Add new automation rules
+
+Edit `automation.py` and add scheduled jobs:
+
+```python
+self.scheduler.add_job(
+    self.your_custom_job,
+    CronTrigger(hour=14, minute=0),  # runs at 2 PM daily
+    id='your_custom_job'
+)
+```
+
+### Modify LLM prompts
+
+Edit `llm_parser.py` to change how natural language is parsed, add new categories, or adjust classification rules.
+
+### Change response style
+
+Use `/style` in Telegram to switch between:
+- **Brief** -- terse confirmations
+- **Friendly** -- conversational with encouragement (default)
+- **Analytical** -- data-heavy responses with metrics
+
+---
+
+## Data & Privacy
+
+- All data is stored locally in `data/life_os.db` (SQLite).
+- The Telegram bot token is the only external credential required.
+- Ollama runs entirely on your machine -- no data leaves your network.
+- Gemini API calls (if configured) are only made when you explicitly request insights or analysis. This is optional.
+- The `.env` file containing your credentials is gitignored and never committed.
+
+### Backup your data
+
+```bash
+cp data/life_os.db data/life_os_backup_$(date +%Y%m%d).db
+```
+
+### Reset the database
+
+```bash
+python3 init_db.py --reset --seed
+```
+
+---
+
+## Troubleshooting
+
+**Bot not responding:**
+```bash
+# Check if Ollama is running
+ollama list
+
+# Check your bot token
+curl https://api.telegram.org/bot<YOUR_TOKEN>/getMe
+
+# Check logs
+tail -f logs/bot.log
+```
+
+**Dashboard not loading:**
+```bash
+# Check if API server is up
+curl http://127.0.0.1:8000/api/health
+
+# Check if ports are in use
+lsof -nP -iTCP:3000 -sTCP:LISTEN
+lsof -nP -iTCP:8000 -sTCP:LISTEN
+
+# Restart
+npm run dev           # dashboard
+python3 api_server.py # API
+```
+
+**Database locked:**
+```bash
+# Stop all running instances
+pkill -f bot.py
+pkill -f api_server.py
+pkill -f pure_telegram_bot
+
+# Then restart
+python3 start_all.py
+```
+
+**LLM parsing errors:**
+```bash
+# Make sure model is downloaded
+ollama pull llama3.2:latest
+
+# Test it manually
+ollama run llama3.2:latest "Parse: Ate rice at 3 PM"
+```
+
+---
+
+## Project Structure
+
+```
+los/
+├── bot.py                    # Telegram bot (main)
+├── api_server.py             # FastAPI backend
+├── database.py               # SQLAlchemy models + queries
+├── llm_parser.py             # Ollama LLM integration
+├── automation.py             # Scheduled automations
+├── insights_engine.py        # Proactive insights engine
+├── conversation_memory.py    # Conversation context + entities
+├── nutrition_estimator.py    # Food macro estimation
+├── gemini_web_agent.py       # Gemini web browsing agent
+├── health_image_analyzer.py  # Image-based health analysis
+├── daily_export.py           # Daily data export
+├── start_all.py              # Service launcher
+├── init_db.py                # Database initialization
+├── configure.sh              # One-command setup
+├── Operator                  # macOS service manager
+├── run_lifeos_bot.sh         # Launchd wrapper script
+├── com.lifeos.bot.plist      # macOS LaunchAgent template
+├── App.jsx                   # React dashboard (main)
+├── TaskBoard.jsx             # Task board component
+├── EnergyChart.jsx           # Energy chart component
+├── FoodTimeline.jsx          # Food timeline component
+├── DailySummary.jsx          # Summary component
+├── CoachPanel.jsx            # AI coach component
+├── CourtBoardPanel.jsx       # Court/project board component
+├── ErrorBoundary.jsx         # React error boundary
+├── useData.js                # Data fetching hook
+├── useWebSocket.js           # WebSocket hook
+├── main.jsx                  # React entry point
+├── index.html                # HTML entry point
+├── index.css                 # Styles (Tailwind)
+├── tailwind.config.js        # Tailwind configuration
+├── postcss.config.js         # PostCSS configuration
+├── vite.config.js            # Vite configuration
+├── package.json              # Node dependencies
+├── requirements.txt          # Python dependencies
+├── requirements_telegram.txt # Telegram-specific Python deps
+├── .env.example              # Environment variable template
+├── .gitignore                # Git ignore rules
+└── data/                     # SQLite database (gitignored)
+```
+
+---
+
+## License
+
+Apache 2.0. See [LICENSE](LICENSE).

@@ -155,13 +155,26 @@ export function useData(selectedDate) {
     setLoading(false);
   }, [fetchTasks, fetchEnergy, fetchFood, fetchSummary, fetchStats, fetchActivityDays, fetchCoachAnalysis, fetchBoard, fetchMilestones, fetchExpenses, fetchSavedItems]);
 
+  // Initial data load - run once on mount
+  useEffect(() => {
+    refreshAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Refresh when selectedDate changes
+  useEffect(() => {
+    refreshAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]);
+
   const deleteTask = useCallback(async (taskId) => {
     const response = await fetch(`${API_URL}/tasks/${taskId}`, { method: 'DELETE' });
     if (!response.ok) {
       throw new Error(`Failed to delete task ${taskId}`);
     }
     await refreshAll();
-  }, [refreshAll]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const createTask = useCallback(async (description) => {
     const response = await fetch(`${API_URL}/tasks`, {
@@ -173,7 +186,8 @@ export function useData(selectedDate) {
       throw new Error('Failed to create task');
     }
     await refreshAll();
-  }, [refreshAll]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const deleteFood = useCallback(async (foodId) => {
     const response = await fetch(`${API_URL}/food/${foodId}`, { method: 'DELETE' });
@@ -181,7 +195,34 @@ export function useData(selectedDate) {
       throw new Error(`Failed to delete food log ${foodId}`);
     }
     await refreshAll();
-  }, [refreshAll]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const createFood = useCallback(async (data) => {
+    const response = await fetch(`${API_URL}/food`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to create food log');
+    }
+    await refreshAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const updateFood = useCallback(async (foodId, data) => {
+    const response = await fetch(`${API_URL}/food/${foodId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update food log');
+    }
+    await refreshAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const markBoardOver = useCallback(async (entryId) => {
     const response = await fetch(`${API_URL}/board/${entryId}/over`, { method: 'POST' });
@@ -189,12 +230,8 @@ export function useData(selectedDate) {
       throw new Error(`Failed to mark board entry ${entryId} over`);
     }
     await refreshAll();
-  }, [refreshAll]);
-
-  useEffect(() => {
-    refreshAll();
-    // No polling - rely on WebSocket updates for real-time data
-  }, [refreshAll]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     tasks,
@@ -213,6 +250,8 @@ export function useData(selectedDate) {
     createTask,
     deleteTask,
     deleteFood,
+    createFood,
+    updateFood,
     markBoardOver,
   };
 }

@@ -20,7 +20,7 @@ This upgrade adds **10 major enhancements** to your Life OS Telegram bot:
 ### Step 1: Backup Your Current Setup
 
 ```bash
-cd /Users/wolfgang_rush/Desktop/los
+cd /path/to/your/lifeos
 cp bot.py bot.backup.py
 cp llm_parser.py llm_parser.backup.py
 cp database.py database.backup.py

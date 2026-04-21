@@ -1,19 +1,24 @@
 # LifeOS Help
 
-This is the quick reference for running and debugging this Mac mini LifeOS setup.
+Quick reference for running and debugging your LifeOS setup.
 
-## Fresh Mac Mini Restart
+## First-Time Setup
 
-After turning the Mac mini off and on again:
+Run the configure script to personalize paths and install the launchd service:
+
+```zsh
+./configure.sh
+```
+
+This generates your LaunchAgent plist, sets up log directories, and installs the `operator` command.
+
+## Fresh Restart
+
+After rebooting your machine:
 
 1. Start Ollama.
-2. Open Terminal in this folder:
-
-   ```zsh
-   cd "/Users/wolfgang_rush/Desktop/Desktop - Wolfgang_rush’s Mac mini/los"
-   ```
-
-3. Start or repair LifeOS:
+2. Open Terminal in your LifeOS project folder.
+3. Start or restart LifeOS:
 
    ```zsh
    operator restart
@@ -32,7 +37,7 @@ The `operator restart` command starts the launchd service that runs:
 - Telegram bot
 - Automation engine
 
-LifeOS is designed to stay on while the Mac mini is awake and logged in. The launchd service starts the main supervisor, and the supervisor watches the child services. If the API server, dashboard, Telegram bot, or automation engine stops, the supervisor should restart that child service instead of leaving localhost off.
+LifeOS is designed to stay on while your machine is awake and logged in.
 
 ## Normal Commands
 
@@ -134,22 +139,17 @@ Expected:
 
 ## Logs
 
-Launchd stderr log:
-
-```zsh
-tail -n 120 /Users/wolfgang_rush/.lifeos/launchd.err.log
-```
-
-Launchd stdout log:
-
-```zsh
-tail -n 120 /Users/wolfgang_rush/.lifeos/launchd.out.log
-```
-
 Bot log:
 
 ```zsh
 tail -n 120 logs/bot.log
+```
+
+Launchd logs (created by `configure.sh`):
+
+```zsh
+tail -n 120 ~/.lifeos/launchd.err.log
+tail -n 120 ~/.lifeos/launchd.out.log
 ```
 
 Supervisor child service logs:
@@ -167,37 +167,17 @@ Supervisor status from launchd:
 launchctl print gui/$(id -u)/com.lifeos.bot
 ```
 
-## Current Important Paths
+## Important Paths
 
-Project folder:
+After running `./configure.sh`, the following are set up:
 
-```text
-/Users/wolfgang_rush/Desktop/Desktop - Wolfgang_rush’s Mac mini/los
-```
-
-Operator command:
-
-```text
-/Users/wolfgang_rush/.local/bin/operator
-```
-
-LaunchAgent plist:
-
-```text
-/Users/wolfgang_rush/Library/LaunchAgents/com.lifeos.bot.plist
-```
-
-Launchd wrapper:
-
-```text
-/Users/wolfgang_rush/.lifeos/run_lifeos_bot.sh
-```
-
-Database:
-
-```text
-data/life_os.db
-```
+| What | Where |
+|------|-------|
+| Project folder | wherever you cloned this repo |
+| Operator command | `./Operator` (or symlinked to `~/.local/bin/operator`) |
+| LaunchAgent plist | `~/Library/LaunchAgents/com.lifeos.bot.plist` |
+| Launchd wrapper | `./run_lifeos_bot.sh` |
+| Database | `data/life_os.db` |
 
 ## Telegram Commands
 
@@ -231,12 +211,6 @@ Most useful commands:
 /style
 /mood
 /operator
-```
-
-Morning supplement stack notes:
-
-```text
-MORNING_SUPPLEMENT_STACK.md
 ```
 
 ## Dashboard Actions
@@ -299,7 +273,7 @@ Remove recent supplement or energy logs:
 Run Python syntax checks:
 
 ```zsh
-.venv312/bin/python -m py_compile api_server.py bot.py database.py start_all.py
+python3 -m py_compile api_server.py bot.py database.py start_all.py
 ```
 
 Build the dashboard:
