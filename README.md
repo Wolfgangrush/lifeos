@@ -1,3 +1,18 @@
+<div align="center">
+<img src="docs/banner.png" width="820"/>
+<br>
+<b>AI-powered personal command center. Track tasks, food, energy, supplements, and expenses via Telegram — all processed locally with Ollama and displayed in a real-time React dashboard.</b>
+<br>
+Visit the live site: <a href="https://wolfgangrush.github.io">wolfgangrush.github.io</a>
+
+<br>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+<a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB" alt="React"></a>
+<a href="https://ollama.ai"><img src="https://img.shields.io/badge/Ollama-local-0C9D58" alt="Ollama"></a>
+<a href="https://telegram.org"><img src="https://img.shields.io/badge/Telegram-26A5E4?logo=telegram&logoColor=white" alt="Telegram"></a>
+</div>
+
+
 # Life OS
 
 A locally-hosted, AI-powered personal command center. Talk to a Telegram bot in natural language to track tasks, food, supplements, energy, expenses, reminders, and more. Everything is stored on your machine in SQLite and displayed in a real-time React dashboard.
